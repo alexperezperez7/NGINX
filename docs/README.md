@@ -157,3 +157,199 @@ Para ver los logs:
 Para detener los contenedores:
 
 ![Detener contenedores](./images/detener-docker-compose.png)
+
+# Documentación práctica NGINX II: Autenticación en Nginx
+
+## Paquetes necesarios
+
+En primer lugar debemos comprobar si el paquete está instalado, y en caso de no estarlo debemos instalarlo:
+
+![Openssl](./images/openssl-1.1.png)
+
+## Creación de usuarios y contraseñas para el acceso web
+
+Crearemos un archivo oculto llamado .htpasswd en el directorio de configuración /etc/nginx donde
+guardar nuestros usuarios y contraseñas. Crearemos un pasword cifrado para el usuario de forma interactiva o interactiva.
+
+![Usuarios](./images/1.2.png)
+
+## Configurando el servidor Nginx para usar autenticación básica
+
+Editaremos la configuración del server block sobre el cual queremos aplicar la restricción de acceso. Utilizaremos para esta autenticación el sitio web de Perfect Learn:
+
+Debemos decidir qué recursos estarán protegidos. Nginx permite añadir restricciones a nivel de servidor o en un location (directorio o archivo) específico. Para nuestro ejemplo, vamos a proteger el document root (la raíz, la página principal) de nuestro sitio.
+
+Utilizaremos la directiva auth_basic dentro del location y le pondremos el nombre a nuestro dominio que será mostrado al usuario al solicitar las credenciales. Por último, configuramos Nginx para que utilice el fichero que previamente hemos creado con la directiva auth_basic_user_file.
+
+![alejandro.test](./images/nombre-web-1.3.png)
+
+Una vez terminada la configuración, reiniciamos el servicio para que aplique nuestra política de acceso.
+
+![Reiniciar servicio](./images/reinicio-nginx.png)
+
+## Probando la nueva configuración
+
+Comprobamos desde la máquina física/anfitrión que podemos acceder a http://nombre-sitio-web y que se solicita autenticación.
+
+![Autenticación](./images/login-1.4.png)
+
+Comprobamos que si cancelamos la autenticación, se negará el acceso al sitio con un error. Un error 401 que nos indica que necesitamos ser autorizados.
+
+![Error](./images/error-1.4.png)
+
+## Tareas
+
+Intentamos entrar primero con un usuario erróneo y luego con otro correcto. Podemos ver todos los sucesos y registros en los logs access.log y error.log.
+
+**Usuario erróneo:**
+
+![Error](./images/t1-2.png)
+
+**Usuario correcto:**
+
+![Error](./images/t1-2-usuario-funciona.png)
+
+La autenticación se aplica al directorio/archivo que le indicamos en la declaración del location y que en este caso el raíz /.
+
+Así pues, esta restricción se aplica al directorio raíz o base donde residen los archivos del sitio web y que es /var/www/example.test/html/static-website-example en nuestro caso. Y a todos los archivos que hay dentro, ya que no hemos especificado ninguno en concreto.
+
+Vamos a intentar que sólo se necesite autenticacíón para entrar a la parte de portfolio. Esta sección se corresponde con el archivo contact.html dentro del directorio raíz.
+
+![Contact](./images/t2.png)
+
+## Combinación de la autenticación básica con la restricción de acceso por IP
+
+La autenticación básica HTTP puede ser combinada de forma efectiva con la restricción de acceso por dirección IP. Se pueden implementar dos escenario:
+
+• Un usuario debe estar ambas cosas, autenticado y tener una IP válida
+
+• Un usuario debe o bien estar autenticado, o bien tener una IP válida
+
+Dentro del block server o archivo de configuración del dominio web, que recordad está en el directorio sites-available.
+
+## Tareas
+
+Configuramos Nginx para que no deje acceder con la IP de la máquina anfitriona al directorio raíz de una de las dos webs. Modificamos su server block o archivo de configuración. Comprobamos como se deniega el acceso:
+
+• Mostraremos la página de error en el navegador
+
+![Tarea](./images/error-forbiden.png)
+
+• Mostraremos el mensaje de error de error.log
+
+![Tarea](./images/error-t3.png)
+
+Configuramos Nginx para que desde la máquina anfitriona se tenga que tener tanto una IP válida como un usuario válido, ambas cosas a la vez, y comprueba que sí puede acceder sin problemas
+
+![Tarea](./images/t3-2.png)
+
+![Tarea](./images/t3-2-2.png)
+
+![Tarea](./images/t3-2-3.png)
+
+# Documentación práctica NGINX II: Autenticación en Nginx con Docker
+
+En el contexto de una transacción HTTP, la autenticación de acceso básica es un método diseñado para permitir a un navegador web, u otro programa cliente, proveer credenciales en la forma de usuario y contraseña cuando se le solicita una página al servidor.
+
+La autenticación básica, como su nombre lo indica, es la forma más básica de autenticación disponible para las aplicaciones Web. Fue definida por primera vez en la especificación HTTP en sí y no es de ninguna manera elegante, pero cumple su función.
+
+Este tipo de autenticación es el tipo más simple disponible pero adolece de importantes problemas de seguridad que no la hacen recomendable en muchas situaciones. No requiere el uso ni de cookies, ni de identificadores de sesión, ni de página de ingreso.
+
+## Paquetes necesarios
+
+Para esta práctica utilizaremos utilidades de OpenSSL, que ya están disponibles en el contenedor de
+stakater/ssl-certs-generator. En tu máquina anfitriona, descarga:
+
+![Paquetes necesarios](./images/paquetes-necesarios.png)
+
+## Creación de usuarios y contraseñas para el acceso web
+
+Crearemos un archivo llamado htpasswd en tu máquina anfitriona dentro de la estructura de configuración de tu sitio web:
+
+![Directorio conf](./images/directorio-conf.png)
+
+Edita el fichero htpasswd y añade en la primera línea
+
+![Htpasswd](./images/htpasswd-1.2.png)
+
+Ahora crearemos un password cifrado para el usuario de forma no interactiva con nuestra imagen:
+
+![Contraseña no interactiva](./images/contraseña-no-interactiva.png)
+
+Y tendremos algo parecido a esto (ajusta el fichero si no te queda igual):
+
+![Htpasswd](./images/cat-htpaswd.png)
+
+## Configurando el contenedor Nginx para usar autenticación básica
+
+Editaremos el archivo de configuración de Nginx. Si no tuviesemos uno hecho, sacaremos de la imagen el fichero de configuración para editarlo con el siguiente comando:
+
+![Docker run](./images/1.3.png)
+
+Editaremos el fichero conf/alejandro.test.conf
+
+![alejandro.test.conf](./images/alejandro.test.conf-1.3.png)
+
+![Docker run](./images/docker-run-1.3.png)
+
+## Probando la nueva configuración
+
+Comprobamos desde la máquina física/anfitrión que podemos acceder a http://nombre-sitio-web y que se solicita autenticación.
+
+![Autenticación](./images/login-1.4.png)
+
+Comprobamos que si cancelamos la autenticación, se negará el acceso al sitio con un error. Un error 401 que nos indica que necesitamos ser autorizados.
+
+![Error](./images/error-1.4.png)
+
+## Tareas
+
+Intentamos entrar primero con un usuario erróneo y luego con otro correcto. Podemos ver todos los sucesos y registros en los logs access.log y error.log.
+
+![Logs docker](./images/docker-logs.png)
+
+**Usuario erróneo:**
+
+![Error](./images/t1-2.png)
+
+**Usuario correcto:**
+
+![Error](./images/t1-2-usuario-funciona.png)
+
+La autenticación se aplica al directorio/archivo que le indicamos en la declaración del location y que en este caso el raíz /.
+
+Así pues, esta restricción se aplica al directorio raíz o base donde residen los archivos del sitio web y que es /var/www/example.test/html/static-website-example en nuestro caso. Y a todos los archivos que hay dentro, ya que no hemos especificado ninguno en concreto.
+
+Vamos a intentar que sólo se necesite autenticacíón para entrar a la parte de portfolio. Esta sección se corresponde con el archivo contact.html dentro del directorio raíz.
+
+![Contact](./images/t2.png)
+
+## Combinación de la autenticación básica con la restricción de acceso por IP
+
+La autenticación básica HTTP puede ser combinada de forma efectiva con la restricción de acceso por dirección IP. Se pueden implementar dos escenario:
+
+• Un usuario debe estar ambas cosas, autenticado y tener una IP válida
+
+• Un usuario debe o bien estar autenticado, o bien tener una IP válida
+
+Dentro del block server o archivo de configuración del dominio web, que recordad está en el directorio sites-available.
+
+## Tareas
+
+Configuramos Nginx para que no deje acceder con la IP de la máquina anfitriona al directorio raíz de una de las dos webs. Modificamos su server block o archivo de configuración. Comprobamos como se deniega el acceso:
+
+• Mostraremos la página de error en el navegador
+
+![Tarea](./images/error-forbiden.png)
+
+• Mostraremos el mensaje de error de error.log
+
+![Tarea](./images/error-t3.png)
+
+Configuramos Nginx para que desde la máquina anfitriona se tenga que tener tanto una IP válida como un usuario válido, ambas cosas a la vez, y comprueba que sí puede acceder sin problemas
+
+![Tarea](./images/t3-2.png)
+
+![Tarea](./images/t3-2-2.png)
+
+![Tarea](./images/t3-2-3.png)

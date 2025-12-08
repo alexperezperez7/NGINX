@@ -353,3 +353,99 @@ Configuramos Nginx para que desde la máquina anfitriona se tenga que tener tant
 ![Tarea](./images/t3-2-2.png)
 
 ![Tarea](./images/t3-2-3.png)
+
+# Documentación práctica NGINX III: Acceso seguro con Nginx
+
+## Configuración de Nginx
+
+Crearemos el fichero para nuestro dominio que suponemos /etc/nginx/sitesavailable/alejandro.test y estableceremos la directiva server_name apropiadamente
+
+![Nombre de servidor](./images/alejandro.test-2.1.png)
+
+Comprobaremos que no hemos introducido ningún error de sintáxis en la configuración. Reiniciamos el servicio.
+
+![Comprobar sintaxis](./images/comprobar-error-reiniciar-servicio.png)
+
+## Configuración del cortafuegos
+
+Si no tenemos instalado un cortafuegos, usaremos ufw
+
+![Instalarlo](./images/instalar-ufw.png)
+
+Comprobaremos si el cortafuegos está activo y cuales son los perfiles que tiene activado.
+
+En mi caso no estaba activado y tuve que activarlo.
+
+![Activarlo](./images/status-ufw.png)
+
+Activaremos el perfil para permitir el tráfico HTTPS
+
+![Permitir HTTPS](./images/reglas-ufw.png)
+
+Comprobaremos el status.
+
+![Permitir HTTPS](./images/estado-ufw-despues-de-reglas.png)
+
+Activaremos el cortafuegos
+
+![Activar cortafuegos](./images/activar-ufw.png)
+
+## Generar un certificado autofirmado
+
+El certificado almacenará información básica acerca del sitio web, y estará acompañada de un fichero de clave privada que permite al servidor manejar los datos cifrados enviados al servidor.
+
+Crearemos la clave SSL y el certificado con el comando openssl
+
+![Generar certificado](./images/certificado.png)
+
+## Configuracion
+
+Añadiremos a la configuración de nuestro sitio alejandro.test el uso de certificado SSL.
+
+![Sitio con certificado](./images/alejandro.test-certificado-conf.png)
+
+Comprobaremos la configuración y recargamos el servidor.
+
+![Comprobar y recargar](./images/comprobar-conf-certificado-recargar-servidor.png)
+
+## Prueba
+
+Accedemos a la dirección del servidor web para comprobar que funciona.
+
+![Prueba](./images/prueba-https.png)
+
+# Documentación práctica NGINX III: Acceso seguro con Docker
+
+Crearemos el fichero para nuestro dominio y estableceremos la directiva server_name apropiadamente.
+
+![Archivo .conf](./images/alejandro.test.conf.png)
+
+## Generar un certificado autofirmado
+
+El certificado almacenará información básica acerca del sitio web, y estará acompañada de un fichero de clave privada que permite al servidor manejar los datos cifrados enviados al servidor.
+
+Crearemos la clave SSL y el certificado con el comando la imagen stakater/ssl-certs-generator.
+
+![Certificado](./images/certificado-docker.png)
+
+![Certs](./images/mkdir-certs.png)
+
+## Configuracion
+
+Añadiremos a la configuración de nuestro sitio alejandro.test el uso de certificado SSL.
+
+![Sitio con certificado](./images/alejandro.test-certificado-conf.png)
+
+• Mapearemos los puertos 80 y 443 para acceder al servicio web.
+
+• Montaremos los certificados mediante un volumen de enlace en la ruta establecida en la configuración.
+
+![Mapeo puertos](./images/4.1.png)
+
+## Prueba con docker-compose
+
+Crearemos un fichero docker compose y lo probaremos.
+
+![Fichero](./images/fichero-docker-compose.png)
+
+![Prueba](./images/levantar-docker-logs.png)
